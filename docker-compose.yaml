@@ -1,0 +1,15 @@
+services:
+  email-archive-ui:
+    image: rjyspl/email-archive-ui:latest
+    container_name: email-archive-ui
+    environment:
+      - TZ=Asia/Kolkata
+
+    # The ports are used to expose the application to the host machine
+    env_file:
+      - .env
+
+    ports:
+      - "127.0.0.1:8386:3000"
+
+    restart: always
