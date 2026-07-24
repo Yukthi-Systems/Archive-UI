@@ -201,6 +201,9 @@ export function ArchiveFilters({
           <div className='xl:col-span-3 space-y-1.5'>
             <Label className='text-xs font-medium flex items-center gap-1.5'>
               <User className='w-3.5 h-3.5' /> From Address
+              {!senderEmail.trim() && !recipientEmails.trim() && (
+                <span className='text-destructive'>*</span>
+              )}
             </Label>
             {hasMailboxPermissions ? (
               <div className='space-y-1'>
@@ -208,32 +211,52 @@ export function ArchiveFilters({
                   <Input
                     placeholder='Select sender...'
                     value={senderEmail}
-                    onChange={e => setSenderEmail(e.target.value)}
+                    onChange={e => {
+                      const raw = e.target.value
+                      if (raw.includes(',')) {
+                        const parts = raw.split(',')
+                        setSenderEmail(parts[parts.length - 1].trim())
+                      } else {
+                        setSenderEmail(raw)
+                      }
+                    }}
                     onFocus={() => setShowFromSuggestions(true)}
+                    onClick={() => setShowFromSuggestions(true)}
                     // Delayed blur to allow click on suggestion
                     onBlur={() =>
                       setTimeout(() => setShowFromSuggestions(false), 200)
                     }
-                    className='h-9 pr-8'
+                    className='h-9 pr-14'
                   />
+                  {senderEmail && (
+                    <X
+                      className='absolute right-7 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground cursor-pointer hover:text-destructive'
+                      onMouseDown={e => {
+                        e.preventDefault()
+                        setSenderEmail('')
+                      }}
+                    />
+                  )}
                   <ChevronDown className='absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none' />
                   {showFromSuggestions && (
                     <div className='absolute top-full left-0 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-y-auto z-50'>
                       <div className='p-1'>
                         {mailboxOptions
-                          .filter(email => !senderEmail.includes(email))
+                          .filter(email => email !== senderEmail.trim())
+                          .filter(
+                            email =>
+                              !recipientEmails
+                                .split(',')
+                                .map(x => x.trim())
+                                .includes(email)
+                          )
                           .map(email => (
                             <div
                               key={email}
                               className='px-2 py-1.5 text-sm rounded-sm hover:bg-accent cursor-pointer flex items-center'
                               onMouseDown={e => {
                                 e.preventDefault() // Prevent blur
-                                const current = senderEmail
-                                  .trim()
-                                  .replace(/,$/, '')
-                                setSenderEmail(
-                                  current ? `${current}, ${email}` : email
-                                )
+                                setSenderEmail(email)
                                 setShowFromSuggestions(false)
                               }}
                             >
@@ -242,7 +265,12 @@ export function ArchiveFilters({
                             </div>
                           ))}
                         {mailboxOptions.filter(
-                          email => !senderEmail.includes(email)
+                          email =>
+                            email !== senderEmail.trim() &&
+                            !recipientEmails
+                              .split(',')
+                              .map(x => x.trim())
+                              .includes(email)
                         ).length === 0 && (
                           <div className='px-2 py-2 text-xs text-muted-foreground text-center'>
                             No more suggestions
@@ -259,16 +287,31 @@ export function ArchiveFilters({
               </div>
             ) : (
               <div className='space-y-1'>
-                <Input
-                  placeholder='Type sender email...'
-                  value={senderEmail}
-                  onChange={e => setSenderEmail(e.target.value)}
-                  className='h-9'
-                />
-                <p className='flex items-center gap-1 text-[10px] text-muted-foreground'>
-                  <Info className='w-3 h-3 shrink-0' />
-                  Enter a single sender email address to filter.
-                </p>
+                <div className='relative'>
+                  <Input
+                    placeholder='Single sender email'
+                    value={senderEmail}
+                    onChange={e => {
+                      const raw = e.target.value
+                      if (raw.includes(',')) {
+                        const parts = raw.split(',')
+                        setSenderEmail(parts[parts.length - 1].trim())
+                      } else {
+                        setSenderEmail(raw)
+                      }
+                    }}
+                    className='h-9 pr-8'
+                  />
+                  {senderEmail && (
+                    <X
+                      className='absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground cursor-pointer hover:text-destructive'
+                      onMouseDown={e => {
+                        e.preventDefault()
+                        setSenderEmail('')
+                      }}
+                    />
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -277,6 +320,9 @@ export function ArchiveFilters({
           <div className='xl:col-span-3 space-y-1.5'>
             <Label className='text-xs font-medium flex items-center gap-1.5'>
               <User className='w-3.5 h-3.5' /> To Address
+              {!senderEmail.trim() && !recipientEmails.trim() && (
+                <span className='text-destructive'>*</span>
+              )}
             </Label>
             {hasMailboxPermissions ? (
               <div className='space-y-1'>
@@ -332,40 +378,42 @@ export function ArchiveFilters({
                   {showToSuggestions && (
                     <div className='absolute top-full left-0 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-y-auto z-50'>
                       <div className='p-1'>
-                        {mailboxOptions.map(email => {
-                          const selected = recipientEmails
-                            .split(',')
-                            .map(x => x.trim())
-                            .includes(email)
-                          return (
-                            <div
-                              key={email}
-                              className={cn(
-                                'px-2 py-1.5 text-sm rounded-sm hover:bg-accent cursor-pointer flex items-center justify-between',
-                                selected && 'bg-accent/50'
-                              )}
-                              onMouseDown={e => {
-                                e.preventDefault() // Prevent blur
-                                const current = recipientEmails
-                                  .split(',')
-                                  .map(x => x.trim())
-                                  .filter(Boolean)
-                                const next = selected
-                                  ? current.filter(x => x !== email)
-                                  : [...current, email]
-                                setRecipientEmails(next.join(', '))
-                              }}
-                            >
-                              <span className='flex items-center'>
-                                <User className='w-3.5 h-3.5 mr-2 text-muted-foreground' />
-                                {email}
-                              </span>
-                              {selected && (
-                                <Check className='w-3.5 h-3.5 text-primary' />
-                              )}
-                            </div>
-                          )
-                        })}
+                        {mailboxOptions
+                          .filter(email => email !== senderEmail.trim())
+                          .map(email => {
+                            const selected = recipientEmails
+                              .split(',')
+                              .map(x => x.trim())
+                              .includes(email)
+                            return (
+                              <div
+                                key={email}
+                                className={cn(
+                                  'px-2 py-1.5 text-sm rounded-sm hover:bg-accent cursor-pointer flex items-center justify-between',
+                                  selected && 'bg-accent/50'
+                                )}
+                                onMouseDown={e => {
+                                  e.preventDefault() // Prevent blur
+                                  const current = recipientEmails
+                                    .split(',')
+                                    .map(x => x.trim())
+                                    .filter(Boolean)
+                                  const next = selected
+                                    ? current.filter(x => x !== email)
+                                    : [...current, email]
+                                  setRecipientEmails(next.join(', '))
+                                }}
+                              >
+                                <span className='flex items-center'>
+                                  <User className='w-3.5 h-3.5 mr-2 text-muted-foreground' />
+                                  {email}
+                                </span>
+                                {selected && (
+                                  <Check className='w-3.5 h-3.5 text-primary' />
+                                )}
+                              </div>
+                            )
+                          })}
                       </div>
                     </div>
                   )}
@@ -374,15 +422,11 @@ export function ArchiveFilters({
             ) : (
               <div className='space-y-1'>
                 <Input
-                  placeholder='Type recipient email(s)...'
+                  placeholder='Recipient email(s), comma separated'
                   value={recipientEmails}
                   onChange={e => setRecipientEmails(e.target.value)}
                   className='h-9'
                 />
-                <p className='flex items-center gap-1 text-[10px] text-muted-foreground'>
-                  <Info className='w-3 h-3 shrink-0' />
-                  Separate multiple recipient emails with commas.
-                </p>
               </div>
             )}
           </div>
