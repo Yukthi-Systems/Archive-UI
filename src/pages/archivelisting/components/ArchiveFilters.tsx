@@ -478,7 +478,7 @@ export function ArchiveFilters({
                         </div>
                     </> */}
           {/* )} */}
-          <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-11 gap-4 pt-1'>
+          <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-11 gap-4 pt-1 self-end'>
             {/* Actions */}
             <div className='xl:col-span-3 flex items-center gap-2'>
               <Button
