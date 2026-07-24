@@ -94,13 +94,19 @@ export const useDeleteOrganization = () => {
   })
 }
 
+// Domain create/update/delete all change the parent org's quota_utilized
+// server-side, so the cached organizations list must be invalidated too —
+// otherwise the org's quota numbers shown elsewhere go stale (up to the
+// query's staleTime) until an unrelated refetch happens to occur.
 export const useCreateDomain = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ orgId, data }: { orgId: string; data: DomainApiRequest }) =>
       createAdminDomain(orgId, data),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['admin', 'domains'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'domains'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'organizations'] })
+    },
   })
 }
 
@@ -116,8 +122,10 @@ export const useUpdateDomain = () => {
       domainId: string
       data: DomainApiRequest
     }) => updateAdminDomain(orgId, domainId, data),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['admin', 'domains'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'domains'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'organizations'] })
+    },
   })
 }
 
@@ -126,8 +134,10 @@ export const useDeleteDomain = () => {
   return useMutation({
     mutationFn: ({ orgId, domainId }: { orgId: string; domainId: string }) =>
       deleteAdminDomain(orgId, domainId),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['admin', 'domains'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'domains'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'organizations'] })
+    },
   })
 }
 

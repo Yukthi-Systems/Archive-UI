@@ -16,14 +16,22 @@
  */
 
 import { useEffect } from 'react'
-import { useAtom } from 'jotai'
-import { authStateAtom } from '@/atoms/auth'
+import { useAtom, useSetAtom } from 'jotai'
+import {
+  authStateAtom,
+  csrfTokenAtom,
+  notificationsTokenAtom,
+} from '@/atoms/auth'
 import { authService } from '@/api/auth'
 import { userAtom } from '@/atoms/user'
+import { organizationAtom } from '@/atoms/organization'
 
 export const useInitializeApp = () => {
   const [authState, setAuthState] = useAtom(authStateAtom)
   const [user, setUser] = useAtom(userAtom)
+  const setCsrfToken = useSetAtom(csrfTokenAtom)
+  const setNotificationsToken = useSetAtom(notificationsTokenAtom)
+  const setOrganization = useSetAtom(organizationAtom)
 
   useEffect(() => {
     const init = async () => {
@@ -39,6 +47,10 @@ export const useInitializeApp = () => {
               error: null,
             })
           } else {
+            setUser(null)
+            setCsrfToken(null)
+            setNotificationsToken(null)
+            setOrganization(null)
             setAuthState({
               isAuthenticated: false,
               isLoading: false,
@@ -47,8 +59,12 @@ export const useInitializeApp = () => {
           }
         } catch (error) {
           console.error('Session validation failed:', error)
-          // Session is invalid: clear user and stop loading to allow redirect
+          // Session is invalid: clear all auth-scoped state (matches useLogout)
+          // so stale org/user data doesn't linger in localStorage past expiry
           setUser(null)
+          setCsrfToken(null)
+          setNotificationsToken(null)
+          setOrganization(null)
           setAuthState({
             isAuthenticated: false,
             isLoading: false,

@@ -16,11 +16,15 @@
  */
 
 import { useEffect } from 'react'
-import { Globe, ArrowLeft } from 'lucide-react'
+import { Globe, ArrowLeft, HardDrive } from 'lucide-react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAtom } from 'jotai'
 import { selectedAdminOrgAtom } from '@/store/adminStore'
-import { useCreateDomain, useUpdateDomain } from '@/hooks/useAdmin'
+import {
+  useAdminOrganizations,
+  useCreateDomain,
+  useUpdateDomain,
+} from '@/hooks/useAdmin'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -34,30 +38,47 @@ interface AdminDomainFormProps {
   mode: 'create' | 'edit'
 }
 
-const domainFormSchema = yup.object().shape({
-  domain_name: yup
-    .string()
-    .required('Domain name is required')
-    .matches(
-      /^(?!:\/\/)([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(?:\.[a-zA-Z]{2,})*$/,
-      'Please enter a valid domain name (e.g., example.com)'
-    ),
-  data_retention_days: yup
-    .number()
-    .typeError('Retention days must be a number')
-    .integer('Must be a whole number')
-    .required('Data retention days are required')
-    .min(1, 'Retention must be at least 1 day'),
-  quota_allocated: yup
-    .number()
-    .typeError('Quota allocated must be a number')
-    .integer('Must be a whole number')
-    .required('Storage quota is required')
-    .min(1, 'Quota must be at least 1 GB'),
-  is_active: yup.boolean().default(true),
-})
+interface AdminOrgSummary {
+  organization_id: string
+  organization_name: string
+  quota_allocated: number
+  quota_utilized: number
+}
 
-type DomainFormData = yup.InferType<typeof domainFormSchema>
+// `minQuota`/`maxQuota` depend on org + (in edit mode) the domain's own
+// current allocation, so the schema is built per-render instead of static.
+const buildDomainFormSchema = (minQuota: number, maxQuota?: number) =>
+  yup.object().shape({
+    domain_name: yup
+      .string()
+      .required('Domain name is required')
+      .matches(
+        /^(?!:\/\/)([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(?:\.[a-zA-Z]{2,})*$/,
+        'Please enter a valid domain name (e.g., example.com)'
+      ),
+    data_retention_days: yup
+      .number()
+      .typeError('Retention days must be a number')
+      .integer('Must be a whole number')
+      .required('Data retention days are required')
+      .min(1, 'Retention must be at least 1 day'),
+    quota_allocated: yup
+      .number()
+      .typeError('Quota allocated must be a number')
+      .integer('Must be a whole number')
+      .required('Storage quota is required')
+      .min(
+        minQuota,
+        `Quota cannot be less than ${minQuota} GB (already in use by this domain)`
+      )
+      .max(
+        maxQuota ?? Number.MAX_SAFE_INTEGER,
+        `Exceeds organization's available quota (${maxQuota} GB left)`
+      ),
+    is_active: yup.boolean().default(true),
+  })
+
+type DomainFormData = yup.InferType<ReturnType<typeof buildDomainFormSchema>>
 
 export default function AdminDomainForm({ mode }: AdminDomainFormProps) {
   const navigate = useNavigate()
@@ -69,6 +90,27 @@ export default function AdminDomainForm({ mode }: AdminDomainFormProps) {
   const createMutation = useCreateDomain()
   const updateMutation = useUpdateDomain()
 
+  // Org list is fetched once and cached (see getAdminOrganizations) — reused
+  // here to know how much quota is left to allocate to this domain.
+  const { data: orgListData } = useAdminOrganizations({})
+  const org = orgListData?.data?.find(
+    (o: AdminOrgSummary) => o.organization_id === selectedOrg
+  )
+
+  // In edit mode, the domain's own current allocation is being freed and
+  // reallocated, so it counts back toward what's available (mirrors the
+  // backend's quota_difference logic in admin_update_domain).
+  const orgAvailableQuota =
+    org && typeof org.quota_allocated === 'number'
+      ? org.quota_allocated - org.quota_utilized
+      : undefined
+  const maxQuota =
+    mode === 'edit' && domainData && orgAvailableQuota !== undefined
+      ? orgAvailableQuota + domainData.quota_allocated
+      : orgAvailableQuota
+  const minQuota =
+    mode === 'edit' && domainData ? Math.max(1, domainData.quota_utilized) : 1
+
   const {
     register,
     handleSubmit,
@@ -76,13 +118,14 @@ export default function AdminDomainForm({ mode }: AdminDomainFormProps) {
     control,
     formState: { errors },
   } = useForm<DomainFormData>({
-    resolver: yupResolver(domainFormSchema) as any,
+    resolver: yupResolver(buildDomainFormSchema(minQuota, maxQuota)) as any,
     defaultValues: {
       domain_name: '',
       data_retention_days: 365,
       quota_allocated: 10,
       is_active: true,
     },
+    mode: 'onChange',
   })
 
   useEffect(() => {
@@ -218,12 +261,28 @@ export default function AdminDomainForm({ mode }: AdminDomainFormProps) {
             <Input
               id='domain_quota_allocated'
               type='number'
-              min={1}
+              min={minQuota}
+              max={maxQuota}
               {...register('quota_allocated')}
             />
             {errors.quota_allocated && (
               <p className='text-xs text-red-500 font-medium'>
                 {errors.quota_allocated.message}
+              </p>
+            )}
+            {org && orgAvailableQuota !== undefined && (
+              <p className='flex items-center gap-1 text-xs text-muted-foreground'>
+                <HardDrive className='w-3 h-3 shrink-0' />
+                {org.organization_name} has {orgAvailableQuota} GB available (of{' '}
+                {org.quota_allocated} GB)
+                {mode === 'edit' && domainData
+                  ? ` — up to ${maxQuota} GB can be set for this domain`
+                  : ''}
+              </p>
+            )}
+            {mode === 'edit' && domainData?.quota_utilized > 0 && (
+              <p className='text-xs text-muted-foreground'>
+                This domain is already using {domainData.quota_utilized} GB.
               </p>
             )}
           </div>

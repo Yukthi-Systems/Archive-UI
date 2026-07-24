@@ -61,6 +61,7 @@ import ExportEmlLayout from '@/components/layout/ExportEmlLayout'
 
 //admin
 import { AdminProtectedRoute } from './AdminProtectedRoute'
+import { AdminPublicRoute } from './AdminPublicRoute'
 import { AdminLayout } from '@/components/layout/AdminLayout'
 import { AdminLogin } from '@/pages/admin/login'
 import AdminOrganizations from '@/pages/admin/organizations'
@@ -222,8 +223,13 @@ export const router = createBrowserRouter([
       // 3. ADMIN ROUTES (Admin Portal)
       // ---------------------------------------------------
       {
-        path: '/1219/admin/login',
-        element: <AdminLogin />,
+        element: <AdminPublicRoute />,
+        children: [
+          {
+            path: '/1219/admin/login',
+            element: <AdminLogin />,
+          },
+        ],
       },
       {
         element: <AdminProtectedRoute />,

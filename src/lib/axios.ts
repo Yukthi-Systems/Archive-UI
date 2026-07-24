@@ -153,8 +153,13 @@ export interface AdminQueryParams {
   organizationId?: string
 }
 
+// The `/organization/list` endpoint has no pagination support server-side —
+// it always returns every organization. We fetch it once per (search) key and
+// let the table paginate the full array client-side (see DataTable's
+// `manualPagination={false}` mode) instead of re-fetching the whole list on
+// every page turn.
 export const getAdminOrganizations = async (params: AdminQueryParams) => {
-  const { limit = 10, offset = 0, search } = params
+  const { search } = params
   const response = await apiAdminClient.get('/organization/list')
   let data = response.data
 
@@ -166,20 +171,15 @@ export const getAdminOrganizations = async (params: AdminQueryParams) => {
     )
   }
 
-  const paginatedData = data.slice(offset, offset + limit)
-
-  return {
-    data: paginatedData,
-    total: data.length,
-    page: Math.floor(offset / limit) + 1,
-    limit,
-  }
+  return { data, total: data.length }
 }
 
+// `/domain/list/{organization_id}` is likewise unpaginated server-side —
+// same client-side pagination approach as getAdminOrganizations above.
 export const getAdminDomains = async (params: AdminQueryParams) => {
-  const { limit = 10, offset = 0, search, organizationId } = params
+  const { search, organizationId } = params
   if (!organizationId) {
-    return { data: [], total: 0, page: 1, limit }
+    return { data: [], total: 0 }
   }
 
   const response = await apiAdminClient.get(`/domain/list/${organizationId}`)
@@ -191,14 +191,7 @@ export const getAdminDomains = async (params: AdminQueryParams) => {
     )
   }
 
-  const paginatedData = data.slice(offset, offset + limit)
-
-  return {
-    data: paginatedData,
-    total: data.length,
-    page: Math.floor(offset / limit) + 1,
-    limit,
-  }
+  return { data, total: data.length }
 }
 
 export const getAdminUsers = async (params: AdminQueryParams) => {

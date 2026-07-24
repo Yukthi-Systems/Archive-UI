@@ -210,7 +210,7 @@ const AdminUserView = () => {
                   {user.created_at && (
                     <div className='flex items-center gap-2 text-sm'>
                       <Calendar className='w-4 h-4 text-muted-foreground/70' />
-                      <span>
+                      <span title={format(new Date(user.created_at), 'PPPp')}>
                         Created{' '}
                         {format(new Date(user.created_at), 'MMM dd, yyyy')}
                       </span>
@@ -219,7 +219,7 @@ const AdminUserView = () => {
                   {user.updated_at && (
                     <div className='flex items-center gap-2 text-sm'>
                       <Clock className='w-4 h-4 text-muted-foreground/70' />
-                      <span>
+                      <span title={format(new Date(user.updated_at), 'PPPp')}>
                         Updated{' '}
                         {format(new Date(user.updated_at), 'MMM dd, yyyy')}
                       </span>
@@ -321,11 +321,43 @@ const AdminUserView = () => {
               <h3 className='font-semibold'>Security & Authentication</h3>
             </div>
 
-            <div className='p-4 space-y-4'>
-              <div className='text-sm text-muted-foreground'>
-                No special admin security configurations available at this time.
-                Admin authentication is currently handled globally.
-              </div>
+            <div className='p-4 space-y-3'>
+              {[
+                {
+                  label: 'Authenticator App (TOTP)',
+                  active: user.is_totp_2fa_active,
+                },
+                { label: 'SMS Verification', active: user.is_sms_2fa_active },
+                {
+                  label: 'Email Verification',
+                  active: user.is_email_2fa_active,
+                },
+              ].map(({ label, active }) => (
+                <div
+                  key={label}
+                  className='flex items-center justify-between text-sm'
+                >
+                  <span className='text-muted-foreground'>{label}</span>
+                  <Badge
+                    variant={active ? 'default' : 'secondary'}
+                    className={`gap-1 px-2 py-0.5 text-xs ${
+                      active
+                        ? 'bg-green-500/10 text-green-700 hover:bg-green-500/20 border-green-200'
+                        : 'bg-muted text-muted-foreground border-border'
+                    }`}
+                  >
+                    {active ? (
+                      <>
+                        <CheckCircle className='w-3 h-3' /> Enabled
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className='w-3 h-3' /> Disabled
+                      </>
+                    )}
+                  </Badge>
+                </div>
+              ))}
             </div>
           </Card>
         </div>

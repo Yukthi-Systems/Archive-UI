@@ -23,9 +23,19 @@ import {
   Phone,
   HardDrive,
   Shield,
+  Calendar,
+  Clock,
+  Copy,
 } from 'lucide-react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { format } from 'date-fns'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+
+const copyToClipboard = (text: string, label: string) => {
+  navigator.clipboard.writeText(text)
+  toast.success(`${label} copied to clipboard`)
+}
 
 export default function AdminOrganizationView() {
   const navigate = useNavigate()
@@ -95,6 +105,48 @@ export default function AdminOrganizationView() {
               >
                 {orgData.is_active ? 'Active' : 'Inactive'}
               </span>
+            </div>
+            {orgData.created_at && (
+              <div>
+                <p className='text-sm text-muted-foreground flex items-center'>
+                  <Calendar className='h-4 w-4 mr-1' /> Created
+                </p>
+                <p
+                  className='font-medium'
+                  title={format(new Date(orgData.created_at), 'PPPp')}
+                >
+                  {format(new Date(orgData.created_at), 'MMM dd, yyyy')}
+                </p>
+              </div>
+            )}
+            {orgData.updated_at && (
+              <div>
+                <p className='text-sm text-muted-foreground flex items-center'>
+                  <Clock className='h-4 w-4 mr-1' /> Last Updated
+                </p>
+                <p
+                  className='font-medium'
+                  title={format(new Date(orgData.updated_at), 'PPPp')}
+                >
+                  {format(new Date(orgData.updated_at), 'MMM dd, yyyy')}
+                </p>
+              </div>
+            )}
+            <div>
+              <p className='text-sm text-muted-foreground'>Organization ID</p>
+              <div className='flex items-center gap-2 text-[10px] text-muted-foreground bg-muted/30 px-2 py-1 rounded w-fit border border-border/50 mt-1'>
+                <span className='font-mono'>{orgData.organization_id}</span>
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  className='h-4 w-4 hover:bg-transparent hover:text-primary ml-1'
+                  onClick={() =>
+                    copyToClipboard(orgData.organization_id, 'Organization ID')
+                  }
+                >
+                  <Copy className='w-3 h-3' />
+                </Button>
+              </div>
             </div>
           </div>
         </div>

@@ -15,35 +15,22 @@
  * <https://www.gnu.org/licenses/>.
  */
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { Building, Plus, Edit, Trash } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAtom } from 'jotai'
-import { adminPageSizeAtom } from '@/store/adminStore'
-import { type ColumnDef, type PaginationState } from '@tanstack/react-table'
+import { type ColumnDef } from '@tanstack/react-table'
 import { useAdminOrganizations, useDeleteOrganization } from '@/hooks/useAdmin'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/common/DataTable'
 import DeleteConfirmationModal from '@/components/common/DeleteConfirmationModal'
 import { toast } from 'sonner'
+import { format } from 'date-fns'
 
 export default function AdminOrganizations() {
-  const [adminPageSize, setAdminPageSize] = useAtom(adminPageSizeAtom)
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: adminPageSize,
-  })
-
-  useEffect(() => {
-    if (pagination.pageSize !== adminPageSize) {
-      setAdminPageSize(pagination.pageSize)
-    }
-  }, [pagination.pageSize, adminPageSize, setAdminPageSize])
-
-  const { data, isLoading } = useAdminOrganizations({
-    limit: pagination.pageSize,
-    offset: pagination.pageIndex * pagination.pageSize,
-  })
+  // The backend has no pagination for this endpoint — it always returns the
+  // full list, so there's no pagination UI here either; the table just
+  // scrolls if the list is long.
+  const { data, isLoading } = useAdminOrganizations({})
 
   const deleteMutation = useDeleteOrganization()
   const navigate = useNavigate()
@@ -109,6 +96,30 @@ export default function AdminOrganizations() {
         },
       },
       {
+        accessorKey: 'created_at',
+        header: 'Created',
+        cell: ({ row }) =>
+          row.original.created_at ? (
+            <span title={format(new Date(row.original.created_at), 'PPPp')}>
+              {format(new Date(row.original.created_at), 'MMM dd, yyyy')}
+            </span>
+          ) : (
+            '—'
+          ),
+      },
+      {
+        accessorKey: 'updated_at',
+        header: 'Updated',
+        cell: ({ row }) =>
+          row.original.updated_at ? (
+            <span title={format(new Date(row.original.updated_at), 'PPPp')}>
+              {format(new Date(row.original.updated_at), 'MMM dd, yyyy')}
+            </span>
+          ) : (
+            '—'
+          ),
+      },
+      {
         id: 'actions',
         header: () => <div className='text-right'>Actions</div>,
         cell: ({ row }) => {
@@ -150,9 +161,6 @@ export default function AdminOrganizations() {
     []
   )
 
-  const totalCount = data?.total || 0
-  const totalPages = Math.ceil(totalCount / pagination.pageSize)
-
   return (
     <div className='p-6'>
       <div className='flex items-center justify-between mb-6'>
@@ -171,10 +179,6 @@ export default function AdminOrganizations() {
         <DataTable
           columns={columns}
           data={data?.data || []}
-          pageCount={totalPages}
-          rowCount={totalCount}
-          pagination={pagination}
-          onPaginationChange={setPagination}
           isLoading={isLoading}
         />
       </div>

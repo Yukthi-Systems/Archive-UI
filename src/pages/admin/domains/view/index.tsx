@@ -15,9 +15,25 @@
  * <https://www.gnu.org/licenses/>.
  */
 
-import { Globe, ArrowLeft, Edit, HardDrive, Shield, Clock } from 'lucide-react'
+import {
+  Globe,
+  ArrowLeft,
+  Edit,
+  HardDrive,
+  Shield,
+  Clock,
+  Calendar,
+  Copy,
+} from 'lucide-react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { format } from 'date-fns'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+
+const copyToClipboard = (text: string, label: string) => {
+  navigator.clipboard.writeText(text)
+  toast.success(`${label} copied to clipboard`)
+}
 
 export default function AdminDomainView() {
   const navigate = useNavigate()
@@ -85,6 +101,48 @@ export default function AdminDomainView() {
                 {domainData.is_active ? 'Active' : 'Inactive'}
               </span>
             </div>
+            {domainData.created_at && (
+              <div>
+                <p className='text-sm text-muted-foreground flex items-center'>
+                  <Calendar className='h-4 w-4 mr-1' /> Created
+                </p>
+                <p
+                  className='font-medium'
+                  title={format(new Date(domainData.created_at), 'PPPp')}
+                >
+                  {format(new Date(domainData.created_at), 'MMM dd, yyyy')}
+                </p>
+              </div>
+            )}
+            {domainData.updated_at && (
+              <div>
+                <p className='text-sm text-muted-foreground flex items-center'>
+                  <Clock className='h-4 w-4 mr-1' /> Last Updated
+                </p>
+                <p
+                  className='font-medium'
+                  title={format(new Date(domainData.updated_at), 'PPPp')}
+                >
+                  {format(new Date(domainData.updated_at), 'MMM dd, yyyy')}
+                </p>
+              </div>
+            )}
+            <div>
+              <p className='text-sm text-muted-foreground'>Domain ID</p>
+              <div className='flex items-center gap-2 text-[10px] text-muted-foreground bg-muted/30 px-2 py-1 rounded w-fit border border-border/50 mt-1'>
+                <span className='font-mono'>{domainData.domain_id}</span>
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  className='h-4 w-4 hover:bg-transparent hover:text-primary ml-1'
+                  onClick={() =>
+                    copyToClipboard(domainData.domain_id, 'Domain ID')
+                  }
+                >
+                  <Copy className='w-3 h-3' />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -115,6 +173,20 @@ export default function AdminDomainView() {
                 {domainData.quota_allocated} GB
               </p>
             </div>
+            <div>
+              <p className='text-sm text-muted-foreground'>Quota Utilized</p>
+              <p className='font-medium text-xl'>
+                {domainData.quota_utilized} GB
+              </p>
+            </div>
+          </div>
+          <div className='mt-4 w-full bg-secondary rounded-full h-2.5 dark:bg-gray-700'>
+            <div
+              className='bg-primary h-2.5 rounded-full'
+              style={{
+                width: `${Math.min(100, (domainData.quota_utilized / domainData.quota_allocated) * 100 || 0)}%`,
+              }}
+            ></div>
           </div>
         </div>
       </div>

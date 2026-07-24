@@ -18,9 +18,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Globe, Plus, Edit, Trash } from 'lucide-react'
 import { useAtom } from 'jotai'
-import { selectedAdminOrgAtom, adminPageSizeAtom } from '@/store/adminStore'
+import { selectedAdminOrgAtom } from '@/store/adminStore'
 import { Link, useNavigate } from 'react-router-dom'
-import { type ColumnDef, type PaginationState } from '@tanstack/react-table'
+import { type ColumnDef } from '@tanstack/react-table'
 import {
   useAdminDomains,
   useAdminOrganizations,
@@ -30,25 +30,14 @@ import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/common/DataTable'
 import DeleteConfirmationModal from '@/components/common/DeleteConfirmationModal'
 import { toast } from 'sonner'
+import { format } from 'date-fns'
 
 export default function AdminDomains() {
-  const [adminPageSize, setAdminPageSize] = useAtom(adminPageSizeAtom)
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: adminPageSize,
-  })
   const [selectedOrg, setSelectedOrg] = useAtom(selectedAdminOrgAtom)
 
-  useEffect(() => {
-    if (pagination.pageSize !== adminPageSize) {
-      setAdminPageSize(pagination.pageSize)
-    }
-  }, [pagination.pageSize, adminPageSize, setAdminPageSize])
-
-  const { data: orgData, isLoading: isLoadingOrgs } = useAdminOrganizations({
-    limit: 100, // fetch enough to populate dropdown
-    offset: 0,
-  })
+  // Backend has no pagination for orgs either, so this always returns the
+  // full list to populate the dropdown (see getAdminOrganizations)
+  const { data: orgData, isLoading: isLoadingOrgs } = useAdminOrganizations({})
 
   useEffect(() => {
     if (orgData?.data && orgData.data.length > 0) {
@@ -61,9 +50,9 @@ export default function AdminDomains() {
     }
   }, [orgData, selectedOrg, setSelectedOrg])
 
+  // Backend has no pagination for this endpoint either, so there's no
+  // pagination UI here — the table just scrolls if the list is long.
   const { data, isLoading, error } = useAdminDomains({
-    limit: pagination.pageSize,
-    offset: pagination.pageIndex * pagination.pageSize,
     organizationId: selectedOrg,
   })
 
@@ -116,7 +105,9 @@ export default function AdminDomains() {
       },
       {
         accessorKey: 'quota_allocated',
-        header: 'Quota Allocated',
+        header: 'Quota',
+        cell: ({ row }) =>
+          `${row.original.quota_utilized} / ${row.original.quota_allocated} GB`,
       },
       {
         accessorKey: 'is_active',
@@ -131,6 +122,30 @@ export default function AdminDomains() {
             </span>
           )
         },
+      },
+      {
+        accessorKey: 'created_at',
+        header: 'Created',
+        cell: ({ row }) =>
+          row.original.created_at ? (
+            <span title={format(new Date(row.original.created_at), 'PPPp')}>
+              {format(new Date(row.original.created_at), 'MMM dd, yyyy')}
+            </span>
+          ) : (
+            '—'
+          ),
+      },
+      {
+        accessorKey: 'updated_at',
+        header: 'Updated',
+        cell: ({ row }) =>
+          row.original.updated_at ? (
+            <span title={format(new Date(row.original.updated_at), 'PPPp')}>
+              {format(new Date(row.original.updated_at), 'MMM dd, yyyy')}
+            </span>
+          ) : (
+            '—'
+          ),
       },
       {
         id: 'actions',
@@ -173,9 +188,6 @@ export default function AdminDomains() {
     [selectedOrg]
   )
 
-  const totalCount = data?.total || 0
-  const totalPages = Math.ceil(totalCount / pagination.pageSize)
-
   return (
     <div className='p-6'>
       <div className='flex items-center justify-between mb-6'>
@@ -187,10 +199,7 @@ export default function AdminDomains() {
           <select
             className='p-2 text-sm border rounded-md bg-background'
             value={selectedOrg}
-            onChange={e => {
-              setSelectedOrg(e.target.value)
-              setPagination(prev => ({ ...prev, pageIndex: 0 }))
-            }}
+            onChange={e => setSelectedOrg(e.target.value)}
             disabled={isLoadingOrgs}
           >
             <option value=''>-- Select Organization --</option>
@@ -221,10 +230,6 @@ export default function AdminDomains() {
           <DataTable
             columns={columns}
             data={data?.data || []}
-            pageCount={totalPages}
-            rowCount={totalCount}
-            pagination={pagination}
-            onPaginationChange={setPagination}
             isLoading={isLoading}
           />
         )}
