@@ -1,7 +1,7 @@
 services:
-  email-archive-ui:
-    image: rjyspl/email-archive-ui:latest
-    container_name: email-archive-ui
+  archive-ui:
+    image: rjyspl/archive-ui:latest
+    container_name: archive-ui
     environment:
       - TZ=Asia/Kolkata
 
