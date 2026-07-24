@@ -69,10 +69,13 @@ export const parseEml = (emlContent: string): ParsedEmail => {
   }
 
   // Find Boundary
+  // Parameter names are case-insensitive per RFC 2045 — some mailers (e.g.
+  // "iECCM Mailer") emit `Boundary=` with a capital B, which a case-sensitive
+  // match would silently miss.
   const contentType = result.headers['content-type']
   let boundary = ''
-  if (contentType && contentType.includes('boundary=')) {
-    const match = contentType.match(/boundary="?([^";]+)"?/)
+  if (contentType && /boundary=/i.test(contentType)) {
+    const match = contentType.match(/boundary="?([^";]+)"?/i)
     if (match) {
       boundary = match[1]
     }
@@ -216,39 +219,54 @@ const parseMultipart = (
     const partContentLocation = partHeaders['content-location']
 
     // Check for nested multipart
+    // (case-insensitive match — see note above on `Boundary=` vs `boundary=`)
     if (partContentType.includes('multipart/')) {
-      const match = partContentType.match(/boundary="?([^";]+)"?/)
+      const match = partContentType.match(/boundary="?([^";]+)"?/i)
       if (match) {
         parseMultipart(partBody, match[1], result)
       }
       continue
     }
 
+    // An attachment (binary content) is identified the same way regardless of
+    // whether we're deciding how to decode it or how to file it below — a PDF
+    // sent as `Content-Disposition: inline; filename=...` (common for bank
+    // statements) previously fell through this check when deciding how to
+    // decode it, so its base64 body got run through decodeBase64UTF8's UTF-8
+    // decode (atob + escape/decodeURIComponent), which is slow and liable to
+    // throw on arbitrary binary data, especially for multi-megabyte payloads.
+    // `inline` alone isn't enough to call something an attachment — some
+    // senders legitimately mark the primary HTML/text body `inline` too — so
+    // we only count it when a filename is also present.
+    const hasFilename =
+      /filename=/i.test(partContentDisposition) ||
+      /name=/i.test(partContentType)
+    const isAttachmentLike =
+      partContentDisposition.includes('attachment') ||
+      (partContentDisposition.includes('inline') && hasFilename) ||
+      partContentType.includes('application/pdf') ||
+      partContentType.includes('image/')
+
     // Decode content based on encoding
     let decodedContent = partBody
     if (partEncoding === 'quoted-printable') {
       decodedContent = decodeQuotedPrintable(partBody)
     } else if (partEncoding === 'base64') {
-      // For attachments, we keep the raw base64 (cleaned) or decode if it's text?
-      // The interface says content is "Base64 or raw content" for attachments.
-      // But for text/html bodies, we want the decoded string.
-      if (!partContentDisposition.includes('attachment')) {
-        decodedContent = decodeBase64UTF8(partBody)
-      } else {
+      // Binary/attachment content is kept as raw base64 (cleaned of
+      // whitespace); only text bodies get UTF-8 decoded.
+      if (isAttachmentLike) {
         decodedContent = partBody.replace(/\s/g, '')
+      } else {
+        decodedContent = decodeBase64UTF8(partBody)
       }
     }
 
     // Handle Content
-    if (
-      partContentDisposition.includes('attachment') ||
-      partContentType.includes('application/pdf') ||
-      partContentType.includes('image/')
-    ) {
+    if (isAttachmentLike) {
       let filename = 'attachment'
       const filenameMatch =
-        partContentDisposition.match(/filename="?([^";]+)"?/) ||
-        partContentType.match(/name="?([^";]+)"?/)
+        partContentDisposition.match(/filename="?([^";]+)"?/i) ||
+        partContentType.match(/name="?([^";]+)"?/i)
       if (filenameMatch) {
         // Should decode filename too as it can be RFC 2047 encoded
         filename = decodeHeaderValue(filenameMatch[1])

@@ -268,9 +268,7 @@ export const LoginPage = () => {
                 className='w-full  transition-all active:scale-[0.98]'
               >
                 {isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-                {isPending
-                  ? 'Verifying Credentials...'
-                  : 'Sign In to Dashboard'}
+                {isPending ? 'Verifying Credentials...' : 'Sign In'}
               </Button>
             </form>
           </div>
