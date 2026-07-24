@@ -129,7 +129,7 @@ const AdminUserView = () => {
   )
 
   return (
-    <div className='w-full mx-auto space-y-4 p-6'>
+    <div className='w-full mx-auto space-y-4'>
       {/* Header Section */}
       <div className='flex flex-col gap-2'>
         <div className='flex items-center gap-4'>

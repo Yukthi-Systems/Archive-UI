@@ -74,8 +74,8 @@ export const AdminLayout = () => {
       {/* Main Layout Body */}
       <div className='flex flex-1 overflow-hidden relative z-0'>
         {/* Sidebar */}
-        <aside className='w-[260px] flex-shrink-0 border-r border-border bg-card hidden md:flex flex-col'>
-          <nav className='flex-1 overflow-y-auto py-4 px-3 space-y-1'>
+        <aside className='w-[226px] flex-shrink-0 border-r border-border bg-card hidden md:flex flex-col'>
+          <nav className='flex-1 overflow-y-auto py-3 px-2 space-y-1'>
             {navigation.map(item => {
               const Icon = item.icon
               const active = isActive(item.href)
@@ -84,7 +84,7 @@ export const AdminLayout = () => {
                   key={item.name}
                   to={item.href}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors mb-1',
+                    'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors mb-1',
                     active
                       ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -100,7 +100,7 @@ export const AdminLayout = () => {
 
         {/* Content */}
         <div className='w-full overflow-y-auto flex flex-col scrollbar-custom'>
-          <MainContent>
+          <MainContent className='px-3 py-3'>
             <Outlet />
           </MainContent>
         </div>

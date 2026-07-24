@@ -16,7 +16,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react'
-import { Globe, Plus, Edit, Trash } from 'lucide-react'
+import { Globe, Plus, Edit, Trash, MoreHorizontal } from 'lucide-react'
 import { useAtom } from 'jotai'
 import { selectedAdminOrgAtom } from '@/store/adminStore'
 import { Link, useNavigate } from 'react-router-dom'
@@ -29,6 +29,19 @@ import {
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/common/DataTable'
 import DeleteConfirmationModal from '@/components/common/DeleteConfirmationModal'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 
@@ -154,61 +167,74 @@ export default function AdminDomains() {
           const domain = row.original
           return (
             <div className='flex justify-end'>
-              <Button
-                variant='ghost'
-                size='icon'
-                onClick={e => {
-                  e.stopPropagation()
-                  navigate(`/1219/admin/domains/${domain.domain_id}/edit`, {
-                    state: { domain },
-                  })
-                }}
-              >
-                <Edit className='h-4 w-4' />
-              </Button>
-              <Button
-                variant='ghost'
-                size='icon'
-                className='text-destructive hover:text-destructive'
-                onClick={e => {
-                  e.stopPropagation()
-                  setDeleteModal({
-                    id: domain.domain_id,
-                    name: domain.domain_name,
-                  })
-                }}
-              >
-                <Trash className='h-4 w-4' />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <MoreHorizontal className='h-4 w-4' />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='end'>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      navigate(`/1219/admin/domains/${domain.domain_id}/edit`, {
+                        state: { domain },
+                      })
+                    }
+                  >
+                    <Edit className='h-4 w-4' /> Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    variant='destructive'
+                    onClick={() =>
+                      setDeleteModal({
+                        id: domain.domain_id,
+                        name: domain.domain_name,
+                      })
+                    }
+                  >
+                    <Trash className='h-4 w-4' /> Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )
         },
       },
     ],
-    [selectedOrg]
+    [navigate]
   )
 
   return (
-    <div className='p-6'>
-      <div className='flex items-center justify-between mb-6'>
+    <div>
+      <div className='flex items-center justify-between mb-4'>
         <div className='flex items-center gap-3'>
           <Globe className='h-8 w-8 text-primary' />
           <h1 className='text-2xl font-bold'>Domains</h1>
         </div>
         <div className='flex items-center gap-4'>
-          <select
-            className='p-2 text-sm border rounded-md bg-background'
-            value={selectedOrg}
-            onChange={e => setSelectedOrg(e.target.value)}
+          <Select
+            value={selectedOrg || undefined}
+            onValueChange={setSelectedOrg}
             disabled={isLoadingOrgs}
           >
-            <option value=''>-- Select Organization --</option>
-            {orgData?.data?.map((org: any) => (
-              <option key={org.organization_id} value={org.organization_id}>
-                {org.organization_name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className='w-[240px] bg-background'>
+              <SelectValue placeholder='Select organization...' />
+            </SelectTrigger>
+            <SelectContent>
+              {orgData?.data?.map((org: any) => (
+                <SelectItem
+                  key={org.organization_id}
+                  value={org.organization_id}
+                >
+                  {org.organization_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button asChild disabled={!selectedOrg}>
             <Link to='/1219/admin/domains/create'>
               <Plus className='h-4 w-4 mr-2' /> Add Domain
@@ -231,6 +257,7 @@ export default function AdminDomains() {
             columns={columns}
             data={data?.data || []}
             isLoading={isLoading}
+            height='calc(100vh - 150px)'
           />
         )}
       </div>

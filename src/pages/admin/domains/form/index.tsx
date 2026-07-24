@@ -198,8 +198,8 @@ export default function AdminDomainForm({ mode }: AdminDomainFormProps) {
   }
 
   return (
-    <div className='p-6 w-full mx-auto'>
-      <div className='flex items-center gap-4 mb-6'>
+    <div className='w-full mx-auto'>
+      <div className='flex items-center gap-4 mb-4'>
         <Button variant='ghost' size='icon' asChild>
           <Link to='/1219/admin/domains'>
             <ArrowLeft className='h-5 w-5' />

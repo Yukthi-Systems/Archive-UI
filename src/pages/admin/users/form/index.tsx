@@ -236,7 +236,7 @@ const AdminUserForm = ({ mode = 'create' }: AdminUserFormProps) => {
   const isFormDisabled = isPending || !selectedOrg
 
   return (
-    <div className='w-full mx-auto space-y-2 p-6'>
+    <div className='w-full mx-auto space-y-2'>
       <div className='flex flex-col gap-4'>
         <div className='flex items-center gap-4'>
           <Button

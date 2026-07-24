@@ -105,7 +105,7 @@ export function DataTable<TData, TValue>({
                   <TableHead
                     key={header.id}
                     colSpan={header.colSpan}
-                    className='h-10 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none bg-card'
+                    className='h-10 px-4 first:pl-6 last:pr-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none bg-card'
                     style={{
                       width:
                         header.getSize() !== 150 ? header.getSize() : undefined,
@@ -156,7 +156,7 @@ export function DataTable<TData, TValue>({
                   {row.getVisibleCells().map(cell => (
                     <TableCell
                       key={cell.id}
-                      className='px-3 py-2 text-sm align-middle'
+                      className='px-3 py-2 first:pl-6 last:pr-6 text-sm align-middle'
                     >
                       {flexRender(
                         cell.column.columnDef.cell,

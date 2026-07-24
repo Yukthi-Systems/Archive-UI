@@ -16,13 +16,19 @@
  */
 
 import { useState, useMemo } from 'react'
-import { Building, Plus, Edit, Trash } from 'lucide-react'
+import { Building, Plus, Edit, Trash, MoreHorizontal } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { type ColumnDef } from '@tanstack/react-table'
 import { useAdminOrganizations, useDeleteOrganization } from '@/hooks/useAdmin'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/common/DataTable'
 import DeleteConfirmationModal from '@/components/common/DeleteConfirmationModal'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 
@@ -126,44 +132,51 @@ export default function AdminOrganizations() {
           const org = row.original
           return (
             <div className='flex justify-end'>
-              <Button
-                variant='ghost'
-                size='icon'
-                onClick={e => {
-                  e.stopPropagation()
-                  navigate(
-                    `/1219/admin/organizations/${org.organization_id}/edit`,
-                    { state: { org } }
-                  )
-                }}
-              >
-                <Edit className='h-4 w-4' />
-              </Button>
-              <Button
-                variant='ghost'
-                size='icon'
-                className='text-destructive hover:text-destructive'
-                onClick={e => {
-                  e.stopPropagation()
-                  setDeleteModal({
-                    id: org.organization_id,
-                    name: org.organization_name,
-                  })
-                }}
-              >
-                <Trash className='h-4 w-4' />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <MoreHorizontal className='h-4 w-4' />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='end'>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      navigate(
+                        `/1219/admin/organizations/${org.organization_id}/edit`,
+                        { state: { org } }
+                      )
+                    }
+                  >
+                    <Edit className='h-4 w-4' /> Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    variant='destructive'
+                    onClick={() =>
+                      setDeleteModal({
+                        id: org.organization_id,
+                        name: org.organization_name,
+                      })
+                    }
+                  >
+                    <Trash className='h-4 w-4' /> Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )
         },
       },
     ],
-    []
+    [navigate]
   )
 
   return (
-    <div className='p-6'>
-      <div className='flex items-center justify-between mb-6'>
+    <div>
+      <div className='flex items-center justify-between mb-4'>
         <div className='flex items-center gap-3'>
           <Building className='h-8 w-8 text-primary' />
           <h1 className='text-2xl font-bold'>Organizations</h1>
@@ -180,6 +193,7 @@ export default function AdminOrganizations() {
           columns={columns}
           data={data?.data || []}
           isLoading={isLoading}
+          height='calc(100vh - 150px)'
         />
       </div>
 

@@ -17,14 +17,21 @@
 
 // MainContent.tsx
 import { type ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 
 interface MainContentProps {
   children: ReactNode
+  className?: string
 }
 
-export const MainContent = ({ children }: MainContentProps) => {
+export const MainContent = ({ children, className }: MainContentProps) => {
   return (
-    <main className='flex-1 overflow-y-auto h-full px-6 py-4 scrollbar-custom'>
+    <main
+      className={cn(
+        'flex-1 overflow-y-auto h-full px-6 py-4 scrollbar-custom',
+        className
+      )}
+    >
       <div className='max-w-[--breakpoint-2xl] mx-auto w-full relative'>
         {children}
       </div>

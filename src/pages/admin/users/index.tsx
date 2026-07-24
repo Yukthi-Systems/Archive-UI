@@ -16,7 +16,15 @@
  */
 
 import { useState, useEffect, useMemo } from 'react'
-import { Users, Plus, Edit, Trash, Eye, Key } from 'lucide-react'
+import {
+  Users,
+  Plus,
+  Edit,
+  Trash,
+  Eye,
+  Key,
+  MoreHorizontal,
+} from 'lucide-react'
 import { useAtom } from 'jotai'
 import { selectedAdminOrgAtom, adminPageSizeAtom } from '@/store/adminStore'
 import { type ColumnDef, type PaginationState } from '@tanstack/react-table'
@@ -28,10 +36,24 @@ import {
 } from '@/hooks/useAdmin'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/common/DataTable'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import DeleteConfirmationModal from '@/components/common/DeleteConfirmationModal'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { toast } from 'sonner'
 import { ResetPasswordModal } from '@/components/common/ResetPasswordModal'
+import { format } from 'date-fns'
 
 export default function AdminUsers() {
   const [adminPageSize, setAdminPageSize] = useAtom(adminPageSizeAtom)
@@ -71,6 +93,7 @@ export default function AdminUsers() {
 
   const deleteMutation = useDeleteUser()
   const updateMutation = useUpdateUser()
+  const navigate = useNavigate()
   const [deleteModal, setDeleteModal] = useState<{
     id: string
     name: string
@@ -150,85 +173,122 @@ export default function AdminUsers() {
         },
       },
       {
+        accessorKey: 'created_at',
+        header: 'Created',
+        cell: ({ row }) =>
+          row.original.created_at ? (
+            <span title={format(new Date(row.original.created_at), 'PPPp')}>
+              {format(new Date(row.original.created_at), 'MMM dd, yyyy')}
+            </span>
+          ) : (
+            '—'
+          ),
+      },
+      {
+        accessorKey: 'updated_at',
+        header: 'Updated',
+        cell: ({ row }) =>
+          row.original.updated_at ? (
+            <span title={format(new Date(row.original.updated_at), 'PPPp')}>
+              {format(new Date(row.original.updated_at), 'MMM dd, yyyy')}
+            </span>
+          ) : (
+            '—'
+          ),
+      },
+      {
         id: 'actions',
         header: () => <div className='text-right'>Actions</div>,
         cell: ({ row }) => {
           const user = row.original
           return (
             <div className='flex justify-end'>
-              <Button variant='ghost' size='icon' asChild>
-                <Link to={`/1219/admin/users/${user.user_id}`} state={{ user }}>
-                  <Eye className='h-4 w-4' />
-                </Link>
-              </Button>
-              <Button variant='ghost' size='icon' asChild>
-                <Link
-                  to={`/1219/admin/users/${user.user_id}/edit`}
-                  state={{ user }}
-                >
-                  <Edit className='h-4 w-4' />
-                </Link>
-              </Button>
-              <Button
-                variant='ghost'
-                size='icon'
-                onClick={e => {
-                  e.stopPropagation()
-                  setResetPasswordUser(user)
-                }}
-                title='Reset Password'
-              >
-                <Key className='h-4 w-4' />
-              </Button>
-              <Button
-                variant='ghost'
-                size='icon'
-                className='text-destructive hover:text-destructive'
-                onClick={e => {
-                  e.stopPropagation()
-                  setDeleteModal({
-                    id: user.user_id,
-                    name: user.user_name || user.display_name,
-                  })
-                }}
-              >
-                <Trash className='h-4 w-4' />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <MoreHorizontal className='h-4 w-4' />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='end'>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      navigate(`/1219/admin/users/${user.user_id}`, {
+                        state: { user },
+                      })
+                    }
+                  >
+                    <Eye className='h-4 w-4' /> View
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      navigate(`/1219/admin/users/${user.user_id}/edit`, {
+                        state: { user },
+                      })
+                    }
+                  >
+                    <Edit className='h-4 w-4' /> Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setResetPasswordUser(user)}>
+                    <Key className='h-4 w-4' /> Reset Password
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    variant='destructive'
+                    onClick={() =>
+                      setDeleteModal({
+                        id: user.user_id,
+                        name: user.user_name || user.display_name,
+                      })
+                    }
+                  >
+                    <Trash className='h-4 w-4' /> Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )
         },
       },
     ],
-    [selectedOrg]
+    [navigate]
   )
 
   const totalCount = data?.total || 0
   const totalPages = Math.ceil(totalCount / pagination.pageSize)
 
   return (
-    <div className='p-6'>
-      <div className='flex items-center justify-between mb-6'>
+    <div>
+      <div className='flex items-center justify-between mb-4'>
         <div className='flex items-center gap-3'>
           <Users className='h-8 w-8 text-primary' />
           <h1 className='text-2xl font-bold'>Users</h1>
         </div>
         <div className='flex items-center gap-4'>
-          <select
-            className='p-2 text-sm border rounded-md bg-background'
-            value={selectedOrg}
-            onChange={e => {
-              setSelectedOrg(e.target.value)
+          <Select
+            value={selectedOrg || undefined}
+            onValueChange={value => {
+              setSelectedOrg(value)
               setPagination(prev => ({ ...prev, pageIndex: 0 }))
             }}
             disabled={isLoadingOrgs}
           >
-            <option value=''>-- Select Organization --</option>
-            {orgData?.data?.map((org: any) => (
-              <option key={org.organization_id} value={org.organization_id}>
-                {org.organization_name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className='w-[240px] bg-background'>
+              <SelectValue placeholder='Select organization...' />
+            </SelectTrigger>
+            <SelectContent>
+              {orgData?.data?.map((org: any) => (
+                <SelectItem
+                  key={org.organization_id}
+                  value={org.organization_id}
+                >
+                  {org.organization_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button asChild disabled={!selectedOrg}>
             <Link to='/1219/admin/users/create'>
               <Plus className='h-4 w-4 mr-2' /> Add User
@@ -255,6 +315,7 @@ export default function AdminUsers() {
             pagination={pagination}
             onPaginationChange={setPagination}
             isLoading={isLoading}
+            height='calc(100vh - 150px)'
           />
         )}
       </div>

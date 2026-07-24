@@ -43,7 +43,7 @@ export default function AdminDomainView() {
 
   if (!domainData) {
     return (
-      <div className='p-6 max-w-4xl mx-auto text-center'>
+      <div className='max-w-4xl mx-auto text-center'>
         <p className='text-muted-foreground mb-4'>Domain data not found.</p>
         <Button onClick={() => navigate('/1219/admin/domains')}>
           Return to Domains
@@ -53,8 +53,8 @@ export default function AdminDomainView() {
   }
 
   return (
-    <div className='p-6 w-full mx-auto'>
-      <div className='flex items-center justify-between mb-6'>
+    <div className='w-full mx-auto'>
+      <div className='flex items-center justify-between mb-4'>
         <div className='flex items-center gap-4'>
           <Button variant='ghost' size='icon' asChild>
             <Link to='/1219/admin/domains'>
