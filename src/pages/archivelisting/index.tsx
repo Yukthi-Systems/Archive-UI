@@ -99,6 +99,8 @@ const Listing = () => {
   const [searchParams, setSearchParams] = useSearchParams()
 
   const isInitialMount = useRef(true)
+  const prevDomainForResetRef = useRef<string | undefined>(undefined)
+  const prevDomainForSearchRef = useRef<string | undefined>(undefined)
   const [selectedEmail, setSelectedEmail] = useState<EmailArchiveItem | null>(
     null
   )
@@ -295,11 +297,27 @@ const Listing = () => {
     }
   }, [availableDomains, isDomainsReady, domainName, navigate, location.search])
 
-  // Sync local filterDomain with path param
+  // Sync local filterDomain with path param, and clear out any results left
+  // over from the previous domain so stale data isn't shown while the new
+  // domain's search (re)loads
   useEffect(() => {
     if (domainName) {
       setFilterDomain(domainName)
     }
+
+    if (
+      prevDomainForResetRef.current !== undefined &&
+      prevDomainForResetRef.current !== domainName
+    ) {
+      resetSearchResults()
+      resetSearchCount()
+      setActiveSearchParams(null)
+      setPagination(prev => ({ ...prev, pageIndex: 0 }))
+      setPageKeys({})
+      setPageTimes({})
+    }
+
+    prevDomainForResetRef.current = domainName
   }, [domainName])
 
   // 1. Sync local state from URL search params (on mount and when URL changes)
@@ -348,7 +366,11 @@ const Listing = () => {
     ) {
       // Small delay to ensure all states are set if needed, or just call handleSearch logic
       // But we need to avoid infinite loops, so we check if this was an external change
-      if (isInitialMount.current) {
+      const domainChangedSinceLastSearch =
+        prevDomainForSearchRef.current !== undefined &&
+        prevDomainForSearchRef.current !== domainName
+
+      if (isInitialMount.current || domainChangedSinceLastSearch) {
         // Handle initial search
         const initialParams: ArchiveSearchParams = {
           limit: Number(params.pageSize) || 50,
@@ -384,6 +406,7 @@ const Listing = () => {
       }
     }
 
+    prevDomainForSearchRef.current = domainName
     isInitialMount.current = false
   }, [searchParams, domainName, availableDomains, hasExtendedDateRange])
 
