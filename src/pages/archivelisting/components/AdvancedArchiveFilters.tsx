@@ -15,7 +15,7 @@
  * <https://www.gnu.org/licenses/>.
  */
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
@@ -52,6 +52,7 @@ import {
   Info,
   Loader2,
   Paperclip,
+  Plus,
   Search,
   Text,
   User,
@@ -63,6 +64,8 @@ import {
 import { type DateRange } from 'react-day-picker'
 import { type ExportFormat } from '@/hooks/useExport'
 import { cn } from '@/lib/utils'
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 interface AdvancedArchiveFiltersProps {
   isRequestingDownload: boolean
@@ -142,6 +145,41 @@ export function AdvancedArchiveFilters({
   setMatchType,
 }: AdvancedArchiveFiltersProps) {
   const [showDownloadConfirm, setShowDownloadConfirm] = useState(false)
+  const [toInputValue, setToInputValue] = useState('')
+  const toInputRef = useRef<HTMLInputElement>(null)
+
+  const currentRecipients = recipientEmails
+    .split(',')
+    .map(email => email.trim())
+    .filter(Boolean)
+
+  const addRecipients = (emails: string[]) => {
+    const merged = [...currentRecipients]
+    emails
+      .map(email => email.trim())
+      .filter(email => EMAIL_REGEX.test(email))
+      .forEach(email => {
+        if (!merged.includes(email)) merged.push(email)
+      })
+    setRecipientEmails(merged.join(', '))
+  }
+  const addRecipient = (email: string) => addRecipients([email])
+
+  const toQuery = toInputValue.trim().toLowerCase()
+  const toMatches = mailboxOptions
+    .filter(email => email !== senderEmail.trim())
+    .filter(email => !toQuery || email.toLowerCase().includes(toQuery))
+  const toIsValidEmail = EMAIL_REGEX.test(toInputValue.trim())
+  const toShowInvalidHint = toInputValue.trim() !== '' && !toIsValidEmail
+  const canAddCustomTo =
+    toIsValidEmail &&
+    !mailboxOptions.some(email => email.toLowerCase() === toQuery) &&
+    !currentRecipients.includes(toInputValue.trim())
+
+  const fromQuery = senderEmail.trim().toLowerCase()
+  const fromMatches = mailboxOptions
+    .filter(email => email !== senderEmail.trim())
+    .filter(email => !fromQuery || email.toLowerCase().includes(fromQuery))
 
   return (
     <Card className='border rounded-lg bg-slate-50 dark:bg-slate-900/50'>
@@ -222,96 +260,164 @@ export function AdvancedArchiveFilters({
               <div className='space-y-1'>
                 <div className='relative'>
                   <div
-                    role='button'
-                    tabIndex={0}
-                    onClick={() => setShowToSuggestions(!showToSuggestions)}
-                    onBlur={() =>
-                      setTimeout(() => setShowToSuggestions(false), 150)
-                    }
-                    className='min-h-9 h-auto w-full flex flex-wrap items-center gap-1 rounded-md border border-input bg-background px-2.5 py-1.5 text-sm cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring'
+                    onClick={() => toInputRef.current?.focus()}
+                    className='min-h-9 h-auto w-full flex flex-wrap items-center gap-1 rounded-md border border-input bg-background px-2.5 py-1.5 text-sm cursor-text focus-within:ring-1 focus-within:ring-ring'
                   >
-                    {recipientEmails
-                      .split(',')
-                      .map(email => email.trim())
-                      .filter(Boolean).length > 0 ? (
-                      recipientEmails
-                        .split(',')
-                        .map(email => email.trim())
-                        .filter(Boolean)
-                        .map(email => (
-                          <span
-                            key={email}
-                            className='inline-flex items-center gap-1 bg-accent text-accent-foreground rounded px-1.5 py-0.5 text-xs'
-                          >
-                            {email}
-                            <X
-                              className='w-3 h-3 cursor-pointer hover:text-destructive'
-                              onMouseDown={e => {
-                                e.preventDefault()
-                                const remaining = recipientEmails
-                                  .split(',')
-                                  .map(x => x.trim())
-                                  .filter(x => x && x !== email)
-                                setRecipientEmails(remaining.join(', '))
-                              }}
-                            />
-                          </span>
-                        ))
-                    ) : (
-                      <span className='text-muted-foreground'>
-                        Select recipient(s)...
+                    {currentRecipients.map(email => (
+                      <span
+                        key={email}
+                        className='inline-flex items-center gap-1 bg-accent text-accent-foreground rounded px-1.5 py-0.5 text-xs'
+                      >
+                        {email}
+                        <X
+                          className='w-3 h-3 cursor-pointer hover:text-destructive'
+                          onMouseDown={e => {
+                            e.preventDefault()
+                            setRecipientEmails(
+                              currentRecipients
+                                .filter(x => x !== email)
+                                .join(', ')
+                            )
+                          }}
+                        />
                       </span>
-                    )}
+                    ))}
+                    <input
+                      ref={toInputRef}
+                      value={toInputValue}
+                      placeholder={
+                        currentRecipients.length === 0
+                          ? 'Add recipient(s)...'
+                          : ''
+                      }
+                      onChange={e => {
+                        const raw = e.target.value
+                        if (raw.includes(',')) {
+                          const parts = raw.split(',')
+                          addRecipients(parts.slice(0, -1))
+                          setToInputValue(parts[parts.length - 1])
+                        } else {
+                          setToInputValue(raw)
+                        }
+                      }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          if (EMAIL_REGEX.test(toInputValue.trim())) {
+                            addRecipient(toInputValue)
+                            setToInputValue('')
+                          }
+                        } else if (
+                          e.key === 'Backspace' &&
+                          !toInputValue &&
+                          currentRecipients.length > 0
+                        ) {
+                          setRecipientEmails(
+                            currentRecipients.slice(0, -1).join(', ')
+                          )
+                        }
+                      }}
+                      onFocus={() => setShowToSuggestions(true)}
+                      onBlur={() => {
+                        setTimeout(() => setShowToSuggestions(false), 150)
+                        if (EMAIL_REGEX.test(toInputValue.trim())) {
+                          addRecipient(toInputValue)
+                          setToInputValue('')
+                        }
+                      }}
+                      className='flex-1 min-w-[10ch] bg-transparent outline-none text-sm placeholder:text-muted-foreground'
+                    />
                     <ChevronDown
                       className={cn(
-                        'w-3.5 h-3.5 text-muted-foreground ml-auto shrink-0 transition-transform',
+                        'w-3.5 h-3.5 text-muted-foreground ml-auto shrink-0 transition-transform cursor-pointer',
                         showToSuggestions && 'rotate-180'
                       )}
+                      onMouseDown={e => {
+                        e.preventDefault()
+                        setShowToSuggestions(!showToSuggestions)
+                      }}
                     />
                   </div>
                   {showToSuggestions && (
                     <div className='absolute top-full left-0 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-y-auto z-50'>
                       <div className='p-1'>
-                        {mailboxOptions
-                          .filter(email => email !== senderEmail.trim())
-                          .map(email => {
-                            const selected = recipientEmails
-                              .split(',')
-                              .map(x => x.trim())
-                              .includes(email)
-                            return (
-                              <div
-                                key={email}
-                                className={cn(
-                                  'px-2 py-1.5 text-sm rounded-sm hover:bg-accent cursor-pointer flex items-center justify-between',
-                                  selected && 'bg-accent/50'
-                                )}
-                                onMouseDown={e => {
-                                  e.preventDefault()
-                                  const current = recipientEmails
-                                    .split(',')
-                                    .map(x => x.trim())
-                                    .filter(Boolean)
-                                  const next = selected
-                                    ? current.filter(x => x !== email)
-                                    : [...current, email]
-                                  setRecipientEmails(next.join(', '))
-                                }}
-                              >
-                                <span className='flex items-center'>
-                                  <User className='w-3.5 h-3.5 mr-2 text-muted-foreground' />
-                                  {email}
-                                </span>
-                                {selected && (
-                                  <Check className='w-3.5 h-3.5 text-primary' />
-                                )}
-                              </div>
-                            )
-                          })}
+                        {toMatches.length > 0 && (
+                          <p className='px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground'>
+                            Permitted mailboxes
+                          </p>
+                        )}
+                        {toMatches.map(email => {
+                          const selected = currentRecipients.includes(email)
+                          return (
+                            <div
+                              key={email}
+                              className={cn(
+                                'px-2 py-1.5 text-sm rounded-sm hover:bg-accent cursor-pointer flex items-center justify-between',
+                                selected && 'bg-accent/50'
+                              )}
+                              onMouseDown={e => {
+                                e.preventDefault()
+                                if (selected) {
+                                  setRecipientEmails(
+                                    currentRecipients
+                                      .filter(x => x !== email)
+                                      .join(', ')
+                                  )
+                                } else {
+                                  addRecipient(email)
+                                }
+                              }}
+                            >
+                              <span className='flex items-center'>
+                                <User className='w-3.5 h-3.5 mr-2 text-muted-foreground' />
+                                {email}
+                              </span>
+                              {selected && (
+                                <Check className='w-3.5 h-3.5 text-primary' />
+                              )}
+                            </div>
+                          )
+                        })}
+                        {canAddCustomTo && (
+                          <div
+                            className={cn(
+                              'px-2 py-1.5 text-sm rounded-sm hover:bg-accent cursor-pointer flex items-center gap-2 text-primary',
+                              toMatches.length > 0 && 'border-t mt-1 pt-2'
+                            )}
+                            onMouseDown={e => {
+                              e.preventDefault()
+                              addRecipient(toInputValue)
+                              setToInputValue('')
+                            }}
+                          >
+                            <Plus className='w-3.5 h-3.5 shrink-0' />
+                            Add &ldquo;{toInputValue.trim()}&rdquo;
+                          </div>
+                        )}
+                        {toMatches.length === 0 && !canAddCustomTo && (
+                          <div className='px-2 py-2 text-xs text-muted-foreground text-center'>
+                            {toShowInvalidHint
+                              ? 'Enter a valid email address to add it.'
+                              : 'No matches'}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
                 </div>
+                <p
+                  className={cn(
+                    'flex items-center gap-1 text-[10px]',
+                    toShowInvalidHint
+                      ? 'text-destructive'
+                      : 'text-muted-foreground'
+                  )}
+                >
+                  <Info className='w-3 h-3 shrink-0' />
+                  {toShowInvalidHint
+                    ? 'Enter a valid email address to add it.'
+                    : 'Type any email and press Enter to add it.'}
+                </p>
               </div>
             ) : (
               <div className='space-y-1'>
@@ -368,39 +474,23 @@ export function AdvancedArchiveFilters({
                   {showFromSuggestions && (
                     <div className='absolute top-full left-0 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-y-auto z-50'>
                       <div className='p-1'>
-                        {mailboxOptions
-                          .filter(email => email !== senderEmail.trim())
-                          .filter(
-                            email =>
-                              !recipientEmails
-                                .split(',')
-                                .map(x => x.trim())
-                                .includes(email)
-                          )
-                          .map(email => (
-                            <div
-                              key={email}
-                              className='px-2 py-1.5 text-sm rounded-sm hover:bg-accent cursor-pointer flex items-center'
-                              onMouseDown={e => {
-                                e.preventDefault()
-                                setSenderEmail(email)
-                                setShowFromSuggestions(false)
-                              }}
-                            >
-                              <User className='w-3.5 h-3.5 mr-2 text-muted-foreground' />
-                              {email}
-                            </div>
-                          ))}
-                        {mailboxOptions.filter(
-                          email =>
-                            email !== senderEmail.trim() &&
-                            !recipientEmails
-                              .split(',')
-                              .map(x => x.trim())
-                              .includes(email)
-                        ).length === 0 && (
+                        {fromMatches.map(email => (
+                          <div
+                            key={email}
+                            className='px-2 py-1.5 text-sm rounded-sm hover:bg-accent cursor-pointer flex items-center'
+                            onMouseDown={e => {
+                              e.preventDefault()
+                              setSenderEmail(email)
+                              setShowFromSuggestions(false)
+                            }}
+                          >
+                            <User className='w-3.5 h-3.5 mr-2 text-muted-foreground' />
+                            {email}
+                          </div>
+                        ))}
+                        {fromMatches.length === 0 && (
                           <div className='px-2 py-2 text-xs text-muted-foreground text-center'>
-                            No more suggestions
+                            No matches
                           </div>
                         )}
                       </div>
