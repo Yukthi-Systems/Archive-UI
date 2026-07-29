@@ -8,7 +8,7 @@ permission: dashboard:view
 
 # Dashboard
 
-The Dashboard gives you a real-time overview of your archive environment:
+The Dashboard Provides you a real-time overview of your archive environment:
 storage usage, service health, and archiving trends.
 
 ## Organization & Storage
@@ -21,14 +21,14 @@ storage usage, service health, and archiving trends.
 
 ## Service Health
 
-Shows the live status of four backend services: **API**, **Cache**,
+Displays the live status of four backend services: **API**, **Cache**,
 **Database**, and **Search DB**, each marked OK or Failed. Health is checked
 automatically every 3 minutes.
 
 ## Export
 
-The **Export** button pulls live dashboard data — per-domain email counts,
-storage quota, and utilization — and downloads it as an Excel or CSV file.
+The **Export** button download live dashboard data — per-domain email counts,
+storage quota, and utilization — and downloads it as an Excel/CSV format.
 The action is recorded in the Audit Logs.
 
 ## Charts
