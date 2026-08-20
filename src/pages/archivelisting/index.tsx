@@ -48,6 +48,7 @@ import type {
   ArchiveSearchParams,
   EmailArchiveItem,
 } from '@/types/archive.types'
+import type { ApiError } from '@/utils/errorProcessing'
 import ExcelJS from 'exceljs'
 import { auditService } from '@/api/audit'
 import { AUDIT_LOG_TYPES } from '@/types/auditlogs.types'
@@ -143,8 +144,14 @@ const Listing = () => {
     isPending: isSearching,
     reset: resetSearchResults,
   } = useArchiveSearch({
-    onError: error => {
-      toast.error(`Search failed: ${error.message}`)
+    onError: (error: ApiError) => {
+      const apiError =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        (typeof error.response?.data === 'string' ? error.response.data : '') ||
+        error.message ||
+        'Search failed'
+      toast.error(apiError)
     },
   })
 
