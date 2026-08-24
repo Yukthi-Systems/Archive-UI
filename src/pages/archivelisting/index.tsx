@@ -91,6 +91,7 @@ import { EmailPreviewDialog } from './components/EmailPreviewDialog'
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
 import { ArchiveLoader } from '@/components/common/ArchiveLoader'
 import { useAccessPermission } from '@/utils/accessPermission'
+import { sanitizeEmailListInput } from '@/utils/inputValidation'
 import { Switch } from '@/components/ui/switch'
 
 const Listing = () => {
@@ -116,6 +117,8 @@ const Listing = () => {
   const [rawEmlContent, setRawEmlContent] = useState<string | null>(null)
   const [isForwardOpen, setIsForwardOpen] = useState(false)
   const [forwardList, setForwardList] = useState('')
+  const [forwardListHasInvalidChars, setForwardListHasInvalidChars] =
+    useState(false)
   const [isExporting, setIsExporting] = useState(false) // New state for export
 
   const [isLoadingEmail, setIsLoadingEmail] = useState(false)
@@ -1312,6 +1315,7 @@ Description: Failed to export email archive.`
       e?.stopPropagation()
       setSelectedEmail(email)
       setForwardList('')
+      setForwardListHasInvalidChars(false)
       setIsForwardOpen(true)
     },
     []
@@ -1667,11 +1671,23 @@ Description: Failed to export email archive.`
               <Input
                 placeholder='email@example.com, another@example.com'
                 value={forwardList}
-                onChange={e => setForwardList(e.target.value)}
+                onChange={e => {
+                  const raw = e.target.value
+                  const sanitized = sanitizeEmailListInput(raw)
+                  setForwardListHasInvalidChars(sanitized !== raw)
+                  setForwardList(sanitized)
+                }}
               />
-              <p className='text-xs text-muted-foreground'>
-                Separate multiple emails with commas.
-              </p>
+              {forwardListHasInvalidChars ? (
+                <p className='text-xs text-destructive'>
+                  Only letters, numbers, and email symbols (@ . - _ + ,) are
+                  allowed.
+                </p>
+              ) : (
+                <p className='text-xs text-muted-foreground'>
+                  Separate multiple emails with commas.
+                </p>
+              )}
             </div>
           </div>
           <div className='flex justify-end gap-2'>

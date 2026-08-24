@@ -90,6 +90,7 @@ import StatusChangeConfirmationModal from '@/components/common/StatusChangeConfi
 import { useDebounce } from '@/hooks/useDebounce'
 import { useBulkSelection } from '@/hooks/useBulkSelection'
 import BulkDeleteModal from '@/components/common/BulkDeleteModal'
+import { sanitizeAlphanumericSpaces } from '@/utils/inputValidation'
 
 // Define the type for UserItem
 type UserItem = UserType
@@ -171,8 +172,11 @@ const Users = () => {
     [pagination, searchParams, setSearchParams]
   )
 
+  const [searchHasInvalidChars, setSearchHasInvalidChars] = useState(false)
   const handleSearchChange = useCallback((value: string) => {
-    setSearchInput(value)
+    const sanitized = sanitizeAlphanumericSpaces(value)
+    setSearchHasInvalidChars(sanitized !== value)
+    setSearchInput(sanitized)
   }, [])
   const [deleteModal, setDeleteModal] = useState<DeleteUserState | null>(null)
   const [setup2FAUser, setSetup2FAUser] = useState<UserType | null>(null)
@@ -881,6 +885,11 @@ const Users = () => {
               >
                 <X className='h-3.5 w-3.5' />
               </button>
+            )}
+            {searchHasInvalidChars && (
+              <p className='absolute top-full left-0 mt-1 text-[10px] text-destructive whitespace-nowrap'>
+                Only letters, numbers, and spaces are allowed.
+              </p>
             )}
           </div>
 

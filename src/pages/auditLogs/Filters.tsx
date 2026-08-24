@@ -46,6 +46,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
+import { sanitizeAlphanumericSpaces } from '@/utils/inputValidation'
 import { DateRangePicker } from '@/components/common/DateRangePicker'
 import { AUDIT_LOG_TYPES } from '@/types/auditlogs.types' // Ensure you have this
 import { UserSelector } from '@/components/common/infiniteDropdowns/UserName'
@@ -80,6 +81,7 @@ export function AuditLogFilters({
   hasActiveFilters,
 }: AuditLogFiltersProps) {
   const [openLogTypeSelect, setOpenLogTypeSelect] = useState(false)
+  const [searchHasInvalidChars, setSearchHasInvalidChars] = useState(false)
 
   const logTypeOptions = [
     { value: 'ALL', label: 'All Events' },
@@ -206,10 +208,20 @@ export function AuditLogFilters({
             <Input
               placeholder='Search activity...'
               value={searchKeyword}
-              onChange={e => setSearchKeyword(e.target.value)}
+              onChange={e => {
+                const raw = e.target.value
+                const sanitized = sanitizeAlphanumericSpaces(raw)
+                setSearchHasInvalidChars(sanitized !== raw)
+                setSearchKeyword(sanitized)
+              }}
               className='h-9 bg-background/50'
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
             />
+            {searchHasInvalidChars && (
+              <p className='text-[10px] text-destructive'>
+                Only letters, numbers, and spaces are allowed.
+              </p>
+            )}
           </div>
 
           {/* Date Range (Mandatory) */}

@@ -64,6 +64,10 @@ import {
 import { type DateRange } from 'react-day-picker'
 import { type ExportFormat } from '@/hooks/useExport'
 import { cn } from '@/lib/utils'
+import {
+  sanitizeAlphanumericSpaces,
+  sanitizeEmailListInput,
+} from '@/utils/inputValidation'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -147,6 +151,15 @@ export function ArchiveFilters({
   const [showDownloadConfirm, setShowDownloadConfirm] = useState(false)
   const [toInputValue, setToInputValue] = useState('')
   const toInputRef = useRef<HTMLInputElement>(null)
+  const [subjectHasInvalidChars, setSubjectHasInvalidChars] = useState(false)
+  const [senderHasInvalidChars, setSenderHasInvalidChars] = useState(false)
+  const [recipientHasInvalidChars, setRecipientHasInvalidChars] =
+    useState(false)
+  const [toHasInvalidChars, setToHasInvalidChars] = useState(false)
+
+  const ALPHANUMERIC_HINT = 'Only letters, numbers, and spaces are allowed.'
+  const EMAIL_CHARS_HINT =
+    'Only letters, numbers, and email symbols (@ . - _ + ,) are allowed.'
 
   const currentRecipients = recipientEmails
     .split(',')
@@ -193,9 +206,19 @@ export function ArchiveFilters({
             <Input
               placeholder='Search subject...'
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={e => {
+                const raw = e.target.value
+                const sanitized = sanitizeAlphanumericSpaces(raw)
+                setSubjectHasInvalidChars(sanitized !== raw)
+                setSearchQuery(sanitized)
+              }}
               className='h-9'
             />
+            {subjectHasInvalidChars && (
+              <p className='text-[10px] text-destructive'>
+                {ALPHANUMERIC_HINT}
+              </p>
+            )}
           </div>
 
           {/* Date Range */}
@@ -250,7 +273,9 @@ export function ArchiveFilters({
                     placeholder='Select sender...'
                     value={senderEmail}
                     onChange={e => {
-                      const raw = e.target.value
+                      const rawInput = e.target.value
+                      const raw = sanitizeEmailListInput(rawInput)
+                      setSenderHasInvalidChars(raw !== rawInput)
                       if (raw.includes(',')) {
                         const parts = raw.split(',')
                         setSenderEmail(parts[parts.length - 1].trim())
@@ -302,9 +327,18 @@ export function ArchiveFilters({
                     </div>
                   )}
                 </div>
-                <p className='flex items-center gap-1 text-[10px] text-muted-foreground'>
+                <p
+                  className={cn(
+                    'flex items-center gap-1 text-[10px]',
+                    senderHasInvalidChars
+                      ? 'text-destructive'
+                      : 'text-muted-foreground'
+                  )}
+                >
                   <Info className='w-3 h-3 shrink-0' />
-                  At least one of From/To Address is required.
+                  {senderHasInvalidChars
+                    ? EMAIL_CHARS_HINT
+                    : 'At least one of From/To Address is required.'}
                 </p>
               </div>
             ) : (
@@ -314,7 +348,9 @@ export function ArchiveFilters({
                     placeholder='Single sender email'
                     value={senderEmail}
                     onChange={e => {
-                      const raw = e.target.value
+                      const rawInput = e.target.value
+                      const raw = sanitizeEmailListInput(rawInput)
+                      setSenderHasInvalidChars(raw !== rawInput)
                       if (raw.includes(',')) {
                         const parts = raw.split(',')
                         setSenderEmail(parts[parts.length - 1].trim())
@@ -334,6 +370,11 @@ export function ArchiveFilters({
                     />
                   )}
                 </div>
+                {senderHasInvalidChars && (
+                  <p className='text-[10px] text-destructive'>
+                    {EMAIL_CHARS_HINT}
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -381,7 +422,9 @@ export function ArchiveFilters({
                           : ''
                       }
                       onChange={e => {
-                        const raw = e.target.value
+                        const rawInput = e.target.value
+                        const raw = sanitizeEmailListInput(rawInput)
+                        setToHasInvalidChars(raw !== rawInput)
                         if (raw.includes(',')) {
                           const parts = raw.split(',')
                           addRecipients(parts.slice(0, -1))
@@ -498,15 +541,17 @@ export function ArchiveFilters({
                 <p
                   className={cn(
                     'flex items-center gap-1 text-[10px]',
-                    toShowInvalidHint
+                    toShowInvalidHint || toHasInvalidChars
                       ? 'text-destructive'
                       : 'text-muted-foreground'
                   )}
                 >
                   <Info className='w-3 h-3 shrink-0' />
-                  {toShowInvalidHint
-                    ? 'Enter a valid email address to add it.'
-                    : 'Type any email and press Enter to add it.'}
+                  {toHasInvalidChars
+                    ? EMAIL_CHARS_HINT
+                    : toShowInvalidHint
+                      ? 'Enter a valid email address to add it.'
+                      : 'Type any email and press Enter to add it.'}
                 </p>
               </div>
             ) : (
@@ -514,9 +559,19 @@ export function ArchiveFilters({
                 <Input
                   placeholder='Recipient email(s), comma separated'
                   value={recipientEmails}
-                  onChange={e => setRecipientEmails(e.target.value)}
+                  onChange={e => {
+                    const raw = e.target.value
+                    const sanitized = sanitizeEmailListInput(raw)
+                    setRecipientHasInvalidChars(sanitized !== raw)
+                    setRecipientEmails(sanitized)
+                  }}
                   className='h-9'
                 />
+                {recipientHasInvalidChars && (
+                  <p className='text-[10px] text-destructive'>
+                    {EMAIL_CHARS_HINT}
+                  </p>
+                )}
               </div>
             )}
           </div>
