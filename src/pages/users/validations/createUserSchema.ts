@@ -39,6 +39,10 @@ const commonUserSchema = {
   user_email: yup
     .string()
     .required('Email is required')
+    .matches(
+      /^[A-Za-z0-9._@-]+$/,
+      'Only letters, numbers, @, ., _ and - are allowed'
+    )
     .email('Please enter a valid email address'),
 
   primary_phone: yup
