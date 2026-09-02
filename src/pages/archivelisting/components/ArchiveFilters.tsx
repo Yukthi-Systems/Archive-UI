@@ -382,7 +382,7 @@ export function ArchiveFilters({
           {/* To Address */}
           <div className='xl:col-span-3 space-y-1.5'>
             <Label className='text-xs font-medium flex items-center gap-1.5'>
-              <User className='w-3.5 h-3.5' /> To Address
+              <User className='w-3.5 h-3.5' /> Email Recipients (Sent-To)
               {!senderEmail.trim() && !recipientEmails.trim() && (
                 <span className='text-destructive'>*</span>
               )}
