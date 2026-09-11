@@ -62,3 +62,30 @@ account (delete requires confirmation and is permanent).
 
 Click **Save Changes** (edit) / **Create User** (new), or **Cancel** to
 discard.
+
+### Domain Scope vs. Mailbox Scope
+
+If your organization has more than one archive-enabled domain, **Domain
+Scope** controls which ones a user is allowed to see. You can assign one
+domain or several — search and select each domain to grant, and it's added
+as a badge you can remove later. Whatever domains are assigned, the user
+can see and search **Archive List** and individual emails only for those
+domains; any domain not assigned to them won't appear in their Domain
+Selector or anywhere else in their account.
+
+**Mailbox Scope** narrows this further, down to specific mailboxes
+(individual addresses). When a mailbox scope is set for a user:
+
+- Their **From Address** and **To Address** search filters on Archive List
+  only accept those specific mailbox addresses — they can't search by any
+  other sender or recipient, even within a domain they otherwise have
+  access to.
+- At least one of From or To Address becomes a required filter on their
+  searches, so every query stays scoped to a mailbox they're authorized
+  to see.
+
+Use Domain Scope to restrict an admin to only the domain(s) they should
+manage (e.g. a regional IT lead who should only see `sales.example.com`),
+and add Mailbox Scope on top of that when you need to restrict them
+further to specific mailboxes (e.g. an HR user who should only ever search
+`hr@example.com`'s mail, not the rest of the domain).

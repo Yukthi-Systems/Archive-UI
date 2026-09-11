@@ -21,7 +21,7 @@ retention, search, and compliance workflows.
 | **Users** | Manage user accounts and permissions. |
 | **Audit Logs** | View user and system activity history. |
 | **Settings** | Configure organization, profile, and security settings. |
-| **Help & Support** | This documentation. |
+| **Help & Support** | Documentation. |
 
 ## Top Bar
 
@@ -31,12 +31,11 @@ retention, search, and compliance workflows.
 | **Display Mode** | Switch between Light, Dark, or System theme. |
 | **Profile menu** | Opens Profile, Help & Support, and Log Out. |
 
-## What the app does
+## Key Capabilities
 
 - **Secure archiving** — automated journaling and storage of inbound and
   outbound email with retention controls per domain.
 - **Search & discovery** — filter archived email by subject, sender,
-  recipient, date range, attachments, and (with the right permissions) the
-  message body itself.
+  recipient, date range, and attachments.
 - **Administration** — manage domains, users, permission scopes, and review
   a full audit trail of who did what.
