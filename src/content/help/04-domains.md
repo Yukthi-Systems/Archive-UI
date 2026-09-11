@@ -54,6 +54,24 @@ Click a domain from the list to see its full configuration:
 Click **Save Changes** (edit) or **Create Domain** (new) to apply, or
 **Cancel** to discard.
 
+### How Retention Period Works
+
+The retention period is a rolling window, not a fixed cutoff date. On any
+given day, only emails received within the last *N* days (where *N* is the
+domain's configured retention period) are kept. Once an email goes beyond
+that age, it is automatically and permanently deleted — **without any prior
+warning or notification**.
+
+**Example:** if a domain's retention period is set to 90 days, then on
+1 June the archive holds every email received between 3 March and 1 June.
+An email that arrived on 2 March would already have been deleted by
+1 June, since it is more than 90 days old, and there is no way to recover
+it afterward.
+
+Keep this in mind when choosing a retention period — set it to cover the
+longest lookback your compliance or business needs actually require, since
+anything older simply won't be there to search or export later.
+
 ## Bulk Actions
 
 | Action | Description |

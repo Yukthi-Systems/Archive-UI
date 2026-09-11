@@ -36,15 +36,6 @@ addresses you're authorized to see.
 Click **Search** to run the query, or **Reset** to clear every filter and
 return to the unfiltered list.
 
-## Advanced Search
-
-Accounts with the right permissions see an **Advanced Search** toggle that
-adds:
-
-- **Body Search** — search inside the message body, not just the subject.
-- **Extended Date Range** — search further back than the standard 90-day
-  window (up to 3650 days), for long-term compliance lookups.
-
 ## Working with a Result
 
 Click a row to open the email preview, from which you can:
@@ -62,3 +53,21 @@ Click a row to open the email preview, from which you can:
 - **Request Download** — a separate action for larger result sets. It
   submits an asynchronous download job on the server rather than generating
   the file immediately, so you can keep working while it processes.
+
+### How Request Download Works
+
+1. Run your search, then click **Request Download** instead of **Export**.
+   The job is queued on the server — there's no size cap like the 25,000
+   record limit on a direct Export.
+2. Once the job finishes, you'll get a **Notification** (bell icon) — see
+   [Notifications](#notifications) — and an email at your registered
+   address with a link to the download page.
+3. Open the link (from the email or the notification) to reach a download
+   page listing the generated `.eml` zip file(s) for that job, along with
+   size and creation date. Click **Download** to save a file.
+4. Each zip contains the matching emails as individual `.eml` files, so you
+   can extract it and open any single email on its own — you don't have to
+   deal with the whole batch at once.
+5. Files are removed automatically 7 days after the job completes, so
+   download them before then — if a file has already expired, run
+   **Request Download** again to generate a fresh one.

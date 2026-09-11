@@ -16,5 +16,6 @@ in real time rather than requiring a page refresh.
 - The notification panel (opened from the bell icon) keeps a running list
   you can review, open for detail, or clear.
 - Typical triggers include: an export finishing and becoming ready to
-  download, a bulk import completing (or failing validation), and other
-  asynchronous jobs you've started elsewhere in the app.
+  download, a bulk import completing (or failing validation), other
+  asynchronous jobs you've started elsewhere in the app, and other users in
+  your organization logging in or out.
