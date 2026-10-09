@@ -253,7 +253,12 @@ const DomainForm = ({ mode }: DomainFormProps) => {
                   <Input
                     id='domain_name'
                     placeholder='e.g., example.com'
-                    {...register('domain_name')}
+                    {...register('domain_name', {
+                      setValueAs: (v: string) => v?.toLowerCase().trim(),
+                      onChange: e => {
+                        e.target.value = e.target.value.toLowerCase()
+                      },
+                    })}
                     className={
                       errors.domain_name ? 'border-red-500 bg-red-50/10' : ''
                     }

@@ -227,7 +227,12 @@ export default function AdminDomainForm({ mode }: AdminDomainFormProps) {
             <Label htmlFor='domain_name'>Domain Name</Label>
             <Input
               id='domain_name'
-              {...register('domain_name')}
+              {...register('domain_name', {
+                setValueAs: (v: string) => v?.toLowerCase().trim(),
+                onChange: e => {
+                  e.target.value = e.target.value.toLowerCase()
+                },
+              })}
               disabled={mode === 'edit'}
               placeholder='example.com'
             />

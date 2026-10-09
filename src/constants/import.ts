@@ -26,7 +26,10 @@ export const IMPORT_FIELD_MAPPINGS = {
       width: 25,
       sampleValue: 'example.com',
       sampleValue2: 'example.com',
-      validate: (value: string) => {
+      validate: (rawValue: string) => {
+        const value = String(rawValue ?? '')
+          .trim()
+          .toLowerCase()
         const domainRegex =
           /^(?!:\/\/)([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(?:\.[a-zA-Z]{2,})*$/
         if (!domainRegex.test(value)) {
