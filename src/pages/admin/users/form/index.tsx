@@ -366,7 +366,12 @@ const AdminUserForm = ({ mode = 'create' }: AdminUserFormProps) => {
                     id='user_email'
                     type='email'
                     placeholder='john.doe@company.com'
-                    {...register('user_email')}
+                    {...register('user_email', {
+                      setValueAs: (v: string) => v?.toLowerCase().trim(),
+                      onChange: e => {
+                        e.target.value = e.target.value.toLowerCase()
+                      },
+                    })}
                     className={
                       errors.user_email ? 'border-red-500 bg-red-50/10' : ''
                     }

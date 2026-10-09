@@ -420,7 +420,7 @@ const UserForm = ({ mode = 'create' }: UserFormProps) => {
     }) || []
 
   const addMailboxPermission = () => {
-    const trimmedInput = mailboxInput.trim()
+    const trimmedInput = mailboxInput.trim().toLowerCase()
     if (!trimmedInput) return
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(trimmedInput)) {
@@ -650,7 +650,12 @@ const UserForm = ({ mode = 'create' }: UserFormProps) => {
                     id='user_email'
                     type='email'
                     placeholder='john.doe@company.com'
-                    {...register('user_email')}
+                    {...register('user_email', {
+                      setValueAs: (v: string) => v?.toLowerCase().trim(),
+                      onChange: e => {
+                        e.target.value = e.target.value.toLowerCase()
+                      },
+                    })}
                     className={
                       errors.user_email ? 'border-red-500 bg-red-50/10' : ''
                     }
@@ -984,7 +989,9 @@ const UserForm = ({ mode = 'create' }: UserFormProps) => {
                     <Input
                       placeholder='user@domain.com'
                       value={mailboxInput}
-                      onChange={e => setMailboxInput(e.target.value)}
+                      onChange={e =>
+                        setMailboxInput(e.target.value.toLowerCase())
+                      }
                       onKeyDown={e => {
                         if (e.key === 'Enter') {
                           e.preventDefault()

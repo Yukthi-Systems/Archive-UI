@@ -118,7 +118,10 @@ export const IMPORT_FIELD_MAPPINGS = {
       width: 30,
       sampleValue: 'jdoe@example.com',
       sampleValue2: 'asmith@example.com',
-      validate: (value: string) => {
+      validate: (rawValue: string) => {
+        const value = String(rawValue ?? '')
+          .trim()
+          .toLowerCase()
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
           throw new Error('Please enter a valid email address')
         }
@@ -212,6 +215,8 @@ export const IMPORT_FIELD_MAPPINGS = {
       width: 20,
       sampleValue: 'example.com',
       sampleValue2: 'example.com',
+      validate: (value: string[]) =>
+        Array.isArray(value) ? value.map(v => v.trim().toLowerCase()) : value,
     },
     {
       key: 'mailbox_permissions',
@@ -222,6 +227,8 @@ export const IMPORT_FIELD_MAPPINGS = {
       width: 20,
       sampleValue: 'jdoe@example.com',
       sampleValue2: 'asmith@example.com',
+      validate: (value: string[]) =>
+        Array.isArray(value) ? value.map(v => v.trim().toLowerCase()) : value,
     },
     {
       key: 'is_active',
